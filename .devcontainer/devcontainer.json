@@ -1,6 +1,6 @@
 // See https://aka.ms/vscode-remote/devcontainer.json for format details.
 {
-    "name": "elizaos-dev",
+    "name": "clayton-auto-transport",
     "dockerFile": "Dockerfile",
     "build": {
         "args": {
@@ -12,6 +12,8 @@
     "runArgs": [
         "-p 3000:3000", // Add port for server api
         "-p 5173:5173", // Add port for client
+        "-p 8080:8080", // Add port for BatsCRM API simulator
+        "-p 9000:9000", // Add port for Dialpad API simulator
         //"--volume=/usr/lib/wsl:/usr/lib/wsl", // uncomment for WSL
         //"--volume=/mnt/wslg:/mnt/wslg", // uncomment for WSL
         "--gpus=all", // ! uncomment for vGPU
@@ -20,19 +22,67 @@
     ],
     "containerEnv": {
         //"MESA_D3D12_DEFAULT_ADAPTER_NAME": "NVIDIA", // uncomment for WSL
-        //"LD_LIBRARY_PATH": "/usr/lib/wsl/lib" // uncomment for WSL
+        //"LD_LIBRARY_PATH": "/usr/lib/wsl/lib", // uncomment for WSL
+        "ELIZA_CHARACTER": "clayton", // Set Clayton as the default character
+        "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}",
+        "OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY}",
+        "DIALPAD_API_KEY": "${localEnv:DIALPAD_API_KEY}",
+        "DIALPAD_API_SECRET": "${localEnv:DIALPAD_API_SECRET}",
+        "DIALPAD_ACCOUNT_ID": "${localEnv:DIALPAD_ACCOUNT_ID}",
+        "BATSCRM_API_KEY": "${localEnv:BATSCRM_API_KEY}",
+        "BATSCRM_USERNAME": "${localEnv:BATSCRM_USERNAME}",
+        "BATSCRM_PASSWORD": "${localEnv:BATSCRM_PASSWORD}",
+        "BATSCRM_BASE_URL": "${localEnv:BATSCRM_BASE_URL}"
     },
     "customizations": {
         "vscode": {
             "extensions": [
                 "vscode.json-language-features",
                 "vscode.css-language-features",
-                // "foxundermoon.shell-format",
-                // "dbaeumer.vscode-eslint",
-                // "esbenp.prettier-vscode"
-                "ms-python.python"
-            ]
+                "dbaeumer.vscode-eslint",
+                "esbenp.prettier-vscode",
+                "ms-python.python",
+                "ms-vscode.vscode-typescript-next",
+                "github.copilot",
+                "github.copilot-chat",
+                "ms-azuretools.vscode-docker",
+                "redhat.vscode-yaml",
+                "eamodio.gitlens"
+            ],
+            "settings": {
+                "editor.formatOnSave": true,
+                "editor.defaultFormatter": "esbenp.prettier-vscode",
+                "editor.codeActionsOnSave": {
+                    "source.fixAll.eslint": true
+                },
+                "typescript.tsdk": "node_modules/typescript/lib",
+                "typescript.enablePromptUseWorkspaceTsdk": true,
+                "files.exclude": {
+                    "**/.git": true,
+                    "**/.DS_Store": true,
+                    "**/node_modules": false,
+                    "**/dist": true
+                },
+                "search.exclude": {
+                    "**/node_modules": true,
+                    "**/dist": true
+                },
+                "files.watcherExclude": {
+                    "**/.git/objects/**": true,
+                    "**/.git/subtree-cache/**": true,
+                    "**/node_modules/**": true,
+                    "**/dist/**": true
+                }
+            }
         }
     },
-    "features": {}
+    "features": {
+        "ghcr.io/devcontainers/features/github-cli:1": {},
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+    },
+    "postCreateCommand": "pnpm install && pnpm build",
+    "remoteUser": "node",
+    "mounts": [
+        "source=${localEnv:HOME}/.ssh,target=/home/node/.ssh,type=bind,consistency=cached"
+    ]
 }
