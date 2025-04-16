@@ -1,5 +1,152 @@
-# Eliza 🤖
+# Clayton 🤖
 
+# Clayton: Auto Transport Coordinator with BatsCRM Integration
+
+This is a fork of the Eliza Agent Framework configured as "Clayton," an autonomous auto transport coordinator agent that can handle vehicle shipping inquiries, track auto shipments, schedule vehicle pickups, and make calls via Dialpad, all while managing the entire workflow through BatsCRM.
+
+## Features
+
+- Complete BatsCRM integration for auto transport management
+- Track vehicle shipments across multiple auto transport carriers
+- Schedule vehicle pickups and deliveries
+- Calculate auto transport costs based on vehicle type and route
+- Make phone calls via Dialpad integration for customer and carrier communication
+- Provide accurate delivery estimates for vehicles
+- Notify customers about vehicle shipment status
+- Find and assign the best carriers for specific auto transport needs
+- Process quotes, orders, and payments through BatsCRM
+
+## Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/eliza.git
+   cd eliza
+   ```
+
+2. Install dependencies:
+   ```bash
+   pnpm i
+   ```
+
+3. Create a `.env` file with the required API keys:
+   ```
+   # Required for basic functionality
+   OPENAI_API_KEY=your_openai_api_key
+   ANTHROPIC_API_KEY=your_anthropic_api_key
+   
+   # Required for Dialpad integration
+   DIALPAD_API_KEY=your_dialpad_api_key
+   DIALPAD_API_SECRET=your_dialpad_api_secret
+   DIALPAD_ACCOUNT_ID=your_dialpad_account_id
+   
+   # Required for BatsCRM integration
+   BATSCRM_API_KEY=your_batscrm_api_key
+   BATSCRM_USERNAME=your_batscrm_username
+   BATSCRM_PASSWORD=your_batscrm_password
+   BATSCRM_BASE_URL=https://api.batscrm.com/v1
+   ```
+
+4. Build the project:
+   ```bash
+   pnpm build
+   ```
+
+5. Start the agent:
+   ```bash
+   pnpm start
+   ```
+
+6. In a separate terminal, start the client:
+   ```bash
+   pnpm start:client
+   ```
+
+7. Access the web interface at `http://localhost:3000`
+
+## Custom Plugins
+
+### Dialpad Plugin
+
+Enables Clayton to make and receive calls through Dialpad. Features include:
+- Making outbound calls to customers and carriers
+- Ending calls
+- Sending DTMF tones
+- Retrieving call history
+- Managing contacts
+
+### BatsCRM Plugin
+
+Provides full integration with the BatsCRM system for auto transport management:
+- Managing customer records
+- Creating and updating shipments
+- Tracking vehicle locations
+- Assigning carriers to shipments
+- Generating quotes and invoices
+- Processing payments
+- Managing carrier relationships
+
+### Auto Transport Actions
+
+Custom actions specific to auto transport coordination:
+- `createAutoTransportOrder`: Create a new vehicle shipment order in BatsCRM
+- `findAvailableCarriers`: Find carriers available for specific routes and vehicle types
+- `assignCarrierToShipment`: Assign a carrier to a vehicle shipment
+- `getShipmentStatus`: Get detailed status of a vehicle shipment
+- `notifyCustomer`: Notify customers about shipment status updates via multiple channels
+
+## Character Configuration
+
+Clayton is configured as an auto transport coordination specialist with the following characteristics:
+- Professional but friendly tone
+- Deep knowledge of auto transport processes and vehicle shipping requirements
+- Ability to track vehicles across multiple auto transport carriers
+- Capability to make calls via Dialpad to resolve shipping issues with both customers and carriers
+- Focus on providing accurate vehicle pickup and delivery estimates
+- Complete management of the BatsCRM system for end-to-end auto transport operations
+- Understanding of various vehicle types and their transport requirements
+- Knowledge of regional carrier networks and route pricing
+
+## Customization
+
+To customize Clayton's behavior:
+1. Modify the `clayton.json` character file
+2. Add or remove plugins in the character configuration
+3. Extend the auto transport actions by adding new functions
+4. Adjust the BatsCRM and Dialpad plugins to fit your specific needs
+5. Update the examples and dialogues to reflect your business processes
+
+## Development
+
+### Adding New Actions
+
+1. Create a new action file in `plugin-batscrm/src/actions/`
+2. Export the action definition
+3. Register the action in the plugin manifest
+
+### BatsCRM API Integration
+
+If the BatsCRM API changes or you need to add additional functionality:
+1. Update the API endpoints in the BatsCRM plugin
+2. Add new methods to handle additional API features
+3. Extend the action definitions to expose new capabilities
+
+### Dialpad Integration
+
+To customize the phone communication capabilities:
+1. Update the Dialpad plugin with additional features as needed
+2. Create specialized call scripts for different scenarios (pickup confirmation, delivery updates, etc.)
+3. Implement automated call flows for common customer interactions
+
+### Testing
+
+```bash
+pnpm test
+```
+
+## License
+
+This project is licensed under the same terms as the original Eliza framework.
 <div align="center">
   <img src="./docs/static/img/eliza_banner.jpg" alt="Eliza Banner" width="100%" />
 </div>
