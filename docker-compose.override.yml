@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  clayton-agent:
+    # Override with additional volumes for development
+    volumes:
+      - ./packages/core/src/characters:/workspace/packages/core/src/characters
+      - ./plugins/plugin-dialpad:/workspace/plugins/plugin-dialpad
+      - ./plugins/plugin-batscrm:/workspace/plugins/plugin-batscrm
+      - ./.env:/workspace/.env
+
+  batscrm-simulator:
+    # Ensure the simulator directory exists
+    volumes:
+      - ./simulator/batscrm:/app
+    # Create the server.js file if it doesn't exist
+    command: >
+      sh -c "
+        mkdir -p /app;
+        if [ ! -f /app/server.js ]; then
+          echo 'Creating BatsCRM simulator server.js...';
+          cat > /app/server.js << 'EOF'
+const express = require('express');
+// Rest of the BatsCRM simulator code will be here
+// This file will be mounted from the host
+EOF
+        fi;
+        npm install express cors body-parser && node server.js
+      "
+
+  dialpad-simulator:
+    # Ensure the simulator directory exists
+    volumes:
+      - ./simulator/dialpad:/app
+    # Create the server.js file if it doesn't exist
+    command: >
+      sh -c "
+        mkdir -p /app;
+        if [ ! -f /app/server.js ]; then
+          echo 'Creating Dialpad simulator server.js...';
+          cat > /app/server.js << 'EOF'
+const express = require('express');
+// Rest of the Dialpad simulator code will be here
+// This file will be mounted from the host
+EOF
+        fi;
+        npm install express cors body-parser && node server.js
+      "
