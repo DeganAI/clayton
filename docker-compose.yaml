@@ -1,42 +1,74 @@
+version: '3.8'
+
 services:
-    eliza:
-        build:
-            context: .
-            dockerfile: Dockerfile
-        stdin_open: true
-        tty: true
-        volumes:
-            - /var/run/tappd.sock:/var/run/tappd.sock
-            - eliza:/app/packages/client-twitter/src/tweetcache
-            - eliza:/app/db.sqlite
-        environment:
-            - OPENAI_API_KEY=
-            - REDPILL_API_KEY=
-            - ELEVENLABS_XI_API_KEY=
-            - ELEVENLABS_MODEL_ID=eleven_multilingual_v2
-            - ELEVENLABS_VOICE_ID=21m00Tcm4TlvDq8ikWAM
-            - ELEVENLABS_VOICE_STABILITY=0.5
-            - ELEVENLABS_VOICE_SIMILARITY_BOOST=0.9
-            - ELEVENLABS_VOICE_STYLE=0.66
-            - ELEVENLABS_VOICE_USE_SPEAKER_BOOST=false
-            - ELEVENLABS_OPTIMIZE_STREAMING_LATENCY=4
-            - ELEVENLABS_OUTPUT_FORMAT=pcm_16000
-            - TWITTER_DRY_RUN=false
-            - TWITTER_USERNAME=
-            - TWITTER_PASSWORD=
-            - TWITTER_EMAIL=
-            - BIRDEYE_API_KEY=
-            - SOL_ADDRESS=So11111111111111111111111111111111111111112
-            - SLIPPAGE=1
-            - SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
-            - HELIUS_API_KEY=
-            - SERVER_PORT=3000
-            - WALLET_SECRET_SALT=secret_salt
-            # Refer to: https://github.com/elizaOS/eliza/blob/develop/.env.example for all available environment variables
-        ports:
-            - "3000:3000"
-            - "5173:5173"
-        restart: always
+  clayton-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NODE_VER: 23.5.0
+        PNPM_VER: 9.15.2
+    container_name: clayton-agent
+    volumes:
+      - .:/workspace
+      - node_modules:/workspace/node_modules
+    ports:
+      - "3000:3000"  # Server API
+      - "5173:5173"  # Client
+    environment:
+      - NODE_ENV=development
+      - ELIZA_CHARACTER=clayton
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DIALPAD_API_KEY=${DIALPAD_API_KEY}
+      - DIALPAD_API_SECRET=${DIALPAD_API_SECRET}
+      - DIALPAD_ACCOUNT_ID=${DIALPAD_ACCOUNT_ID}
+      - BATSCRM_API_KEY=${BATSCRM_API_KEY}
+      - BATSCRM_USERNAME=${BATSCRM_USERNAME}
+      - BATSCRM_PASSWORD=${BATSCRM_PASSWORD}
+      - BATSCRM_BASE_URL=${BATSCRM_BASE_URL:-https://api.batscrm.com/v1}
+    command: bash -c "pnpm install && pnpm build && pnpm start"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    networks:
+      - clayton-network
+
+  batscrm-simulator:
+    image: node:23.5.0-alpine
+    container_name: batscrm-simulator
+    working_dir: /app
+    volumes:
+      - ./simulator/batscrm:/app
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+    command: sh -c "npm install express cors body-parser && node server.js"
+    networks:
+      - clayton-network
+
+  dialpad-simulator:
+    image: node:23.5.0-alpine
+    container_name: dialpad-simulator
+    working_dir: /app
+    volumes:
+      - ./simulator/dialpad:/app
+    ports:
+      - "9000:9000"
+    environment:
+      - PORT=9000
+    command: sh -c "npm install express cors body-parser && node server.js"
+    networks:
+      - clayton-network
 
 volumes:
-    eliza:
+  node_modules:
+
+networks:
+  clayton-network:
+    driver: bridge
