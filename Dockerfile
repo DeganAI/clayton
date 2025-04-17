@@ -1,79 +1,84 @@
-# Use a specific Node.js version for better reproducibility
-FROM node:23.3.0-slim AS builder
+ARG NODE_VER=23.5.0
+ARG BASE_IMAGE=node:${NODE_VER}
+FROM $BASE_IMAGE
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Install pnpm globally and necessary build tools
-RUN npm install -g pnpm@9.15.4 && \
-    apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install -y \
+# Install pnpm globally and install necessary build tools
+RUN apt-get update \
+    && apt-get install -y \
     git \
     python3 \
-    python3-pip \
-    curl \
-    node-gyp \
-    ffmpeg \
-    libtool-bin \
-    autoconf \
-    automake \
-    libopus-dev \
     make \
     g++ \
-    build-essential \
-    libcairo2-dev \
-    libjpeg-dev \
-    libpango1.0-dev \
-    libgif-dev \
-    openssl \
-    libssl-dev libsecret-1-dev && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    nano \
+    vim \
+    curl \
+    wget \
+    gnupg \
+    lsb-release \
+    ca-certificates \
+    apt-transport-https \
+    software-properties-common \
+    libgl1-mesa-dev \
+    mesa-utils \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set up for NVIDIA GPU support if available
+RUN mkdir -p /etc/OpenCL/vendors && \
+    echo "libnvidia-opencl.so.1" > /etc/OpenCL/vendors/nvidia.icd
+
+# Install Node.js development tools
+ARG PNPM_VER=9.15.2
+RUN npm install -g pnpm@${PNPM_VER} typescript ts-node
 
 # Set Python 3 as the default python
-RUN ln -sf /usr/bin/python3 /usr/bin/python
+RUN ln -s /usr/bin/python3 /usr/bin/python
 
-# Set the working directory
-WORKDIR /app
+# Create and set working directory for Clayton project
+WORKDIR /workspace
 
-# Copy application code
-COPY . .
+# Create a non-root user with sudo access
+RUN groupadd --gid 1000 node \
+    && useradd --uid 1000 --gid node --shell /bin/bash --create-home node \
+    && mkdir -p /home/node/.config \
+    && chown -R node:node /home/node
 
-# Install dependencies
-RUN pnpm install
+# Set up eliza directory structure
+RUN mkdir -p /workspace/packages/core/src/characters \
+    && mkdir -p /workspace/plugins/plugin-dialpad/src \
+    && mkdir -p /workspace/plugins/plugin-batscrm/src/actions
 
-# Build the project
-RUN pnpm run build && pnpm prune --prod
+# Create entrypoint script to set up environment
+RUN echo '#!/bin/bash\n\
+echo "Setting up Clayton Auto Transport Coordinator environment..."\n\
+if [ ! -f .env ]; then\n\
+  echo "Creating default .env file..."\n\
+  echo "ANTHROPIC_API_KEY=your_api_key_here" > .env\n\
+  echo "OPENAI_API_KEY=your_api_key_here" >> .env\n\
+  echo "DIALPAD_API_KEY=your_api_key_here" >> .env\n\
+  echo "DIALPAD_API_SECRET=your_api_secret_here" >> .env\n\
+  echo "DIALPAD_ACCOUNT_ID=your_account_id_here" >> .env\n\
+  echo "BATSCRM_API_KEY=your_api_key_here" >> .env\n\
+  echo "BATSCRM_USERNAME=your_username_here" >> .env\n\
+  echo "BATSCRM_PASSWORD=your_password_here" >> .env\n\
+  echo "BATSCRM_BASE_URL=https://api.batscrm.com/v1" >> .env\n\
+  echo "ELIZA_CHARACTER=clayton" >> .env\n\
+fi\n\
+\n\
+if [ ! -f "package.json" ]; then\n\
+  echo "Initializing project..."\n\
+  pnpm init\n\
+fi\n\
+\n\
+exec "$@"' > /usr/local/bin/entrypoint.sh \
+    && chmod +x /usr/local/bin/entrypoint.sh
 
-# Final runtime image
-FROM node:23.3.0-slim
+# Set environment variables
+ENV ELIZA_CHARACTER=clayton
+ENV DEBIAN_FRONTEND=dialog
+ENV PATH=/workspace/node_modules/.bin:$PATH
 
-# Install runtime dependencies
-RUN npm install -g pnpm@9.15.4 && \
-    apt-get update && \
-    apt-get install -y \
-    git \
-    python3 \
-    ffmpeg && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# Set the working directory
-WORKDIR /app
-
-# Copy built artifacts and production dependencies from the builder stage
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/pnpm-workspace.yaml ./
-COPY --from=builder /app/.npmrc ./
-COPY --from=builder /app/turbo.json ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/agent ./agent
-COPY --from=builder /app/client ./client
-COPY --from=builder /app/lerna.json ./
-COPY --from=builder /app/packages ./packages
-COPY --from=builder /app/scripts ./scripts
-COPY --from=builder /app/characters ./characters
-
-# Expose necessary ports
-EXPOSE 3000 5173
-
-# Command to start the application
-CMD ["sh", "-c", "pnpm start & pnpm start:client"]
+# Set entrypoint
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["bash"]
